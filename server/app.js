@@ -6,7 +6,10 @@ const path = require('path');
 
 dotenv.config();
 
-const feedRouts = require('./router/feed');
+const feedRoutes = require('./router/feed');
+const authRoutes = require('./router/auth');
+
+
 const { static } = require('express');
 const multer = require('multer');
 const uuid = require('uuid');
@@ -49,7 +52,9 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/feed', feedRouts);
+app.use('/feed', feedRoutes);
+app.use('/auth', authRoutes);
+
 app.use((error, req, res, next) => {
     const statusCode = error.statusCode || 500;
     const message = error.message;
@@ -69,6 +74,4 @@ mongoose
         app.listen(process.env.PORT);
     })
     .catch(err => console.log(err));
-
-
 
