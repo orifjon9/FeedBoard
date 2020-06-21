@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const Post = require('../models/post');
+const User = require('../models/user');
 
 module.exports.getPosts = (req, res, next) => {
   const page = req.query.page || 1;
@@ -14,6 +15,7 @@ module.exports.getPosts = (req, res, next) => {
       return Post.find()
         .skip((page - 1) * 3)
         .limit(3)
+        .populate('creator')
     })
     .then(posts => {
       console.log(posts);
@@ -33,6 +35,8 @@ module.exports.getPosts = (req, res, next) => {
 
 module.exports.createPost = (req, res, next) => {
   const { title, content } = req.body;
+  const userId = req.userId;
+  let creator;
 
   const errors = validationResult(req);
   if (!errors.isEmpty() || !req.file) {
@@ -46,15 +50,22 @@ module.exports.createPost = (req, res, next) => {
     title: title,
     content: content,
     imageUrl: req.file.path.replace("\\", "/"),
-    creator: {
-      name: 'Orifjon'
-    }
+    creator: userId
   });
 
   post.save()
     .then(result => {
+      return User.findById(userId);
+    })
+    .then(user => {
+      creator = user;
+      user.posts.push(post);
+      return user.save();
+    })
+    .then(result => {
       return res.status(201).json({
-        post: result
+        post: post,
+        creator: creator
       });
     })
     .catch(err => {
@@ -116,6 +127,13 @@ exports.updatePost = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
+
+      if (post.creator.toString() !== req.userId.toString()) {
+        const error = new Error('Not authorized');
+        error.statusCode = 403;
+        throw error;
+      }
+
       if (imageUrl !== post.imageUrl) {
         clearImage(post.imageUrl);
       }
@@ -144,9 +162,23 @@ exports.deletePost = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
+
+      if (post.creator.toString() !== req.userId.toString()) {
+        const error = new Error('Not authorized');
+        error.statusCode = 403;
+        throw error;
+      }
+
       // Check logged in user
       clearImage(post.imageUrl);
       return Post.findByIdAndRemove(postId);
+    })
+    .then(result => {
+      return User.findById(req.userId);
+    })
+    .then(user => {
+      user.posts.pull(postId);
+      return user.save();
     })
     .then(result => {
       console.log(result);
