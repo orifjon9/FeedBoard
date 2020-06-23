@@ -1,4 +1,5 @@
 import React, { Component, Fragment } from 'react';
+import openSocket from 'socket.io-client';
 
 import Post from '../../components/Feed/Post/Post';
 import Button from '../../components/Button/Button';
@@ -8,7 +9,6 @@ import Paginator from '../../components/Paginator/Paginator';
 import Loader from '../../components/Loader/Loader';
 import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import './Feed.css';
-import post from '../../components/Feed/Post/Post';
 
 class Feed extends Component {
   state = {
@@ -40,6 +40,53 @@ class Feed extends Component {
       .catch(this.catchError);
 
     this.loadPosts();
+    const socket = openSocket('http://localhost:4000');
+    socket.on('posts-channel', data => {
+      if (data.action === 'created') {
+        this.addPost(data.post);
+      } else if (data.action === 'updated') {
+        this.updatePost(data.post);
+      } else if (data.action === 'deleted') {
+        this.deletePost(data.postId);
+      }
+    });
+  }
+
+  addPost = post => {
+    this.setState(prevState => {
+      const updatedPosts = [...prevState.posts];
+      if (prevState.postPage === 1) {
+        if (prevState.posts.length >= 2) {
+          updatedPosts.pop();
+        }
+        updatedPosts.unshift(post);
+      }
+      return {
+        posts: updatedPosts,
+        totalPosts: prevState.totalPosts + 1
+      };
+    });
+  }
+
+  updatePost = post => {
+    this.setState(prevState => {
+      const updatedPosts = [...prevState.posts];
+      const postIndex = updatedPosts.findIndex(p => p._id.toString() === post._id.toString());
+      if (postIndex > -1) {
+        updatedPosts[postIndex] = post;
+      }
+
+      return {
+        posts: updatedPosts
+      };
+    });
+  }
+
+  deletePost = postId => {
+    this.setState(prevState => {
+      const updatedPosts = prevState.posts.filter(p => p._id !== postId);
+      return { posts: updatedPosts, postsLoading: false };
+    });
   }
 
   loadPosts = direction => {
@@ -163,18 +210,9 @@ class Feed extends Component {
           createdAt: resData.post.createdAt,
           imagePath: resData.post.imageUrl
         };
+
         this.setState(prevState => {
-          let updatedPosts = [...prevState.posts];
-          if (prevState.editPost) {
-            const postIndex = prevState.posts.findIndex(
-              p => p._id === prevState.editPost._id
-            );
-            updatedPosts[postIndex] = post;
-          } else if (prevState.posts.length < 2) {
-            updatedPosts = prevState.posts.concat(post);
-          }
           return {
-            posts: updatedPosts,
             isEditing: false,
             editPost: null,
             editLoading: false
@@ -208,14 +246,6 @@ class Feed extends Component {
         if (res.status !== 200 && res.status !== 201) {
           throw new Error('Deleting a post failed!');
         }
-        return res.json();
-      })
-      .then(resData => {
-        console.log(resData);
-        this.setState(prevState => {
-          const updatedPosts = prevState.posts.filter(p => p._id !== postId);
-          return { posts: updatedPosts, postsLoading: false };
-        });
       })
       .catch(err => {
         console.log(err);

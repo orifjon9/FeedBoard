@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator/check');
 const fs = require('fs');
 const path = require('path');
+const io = require('../socket');
 
 const Post = require('../models/post');
 const User = require('../models/user');
@@ -10,8 +11,9 @@ module.exports.getPosts = async (req, res, next) => {
   try {
     const totalItems = await Post.countDocuments();
     const posts = await Post.find()
+      .sort({ createdAt: -1 })
       .skip((page - 1) * 3)
-      .limit(3)
+      .limit(10)
       .populate('creator');
 
     return res.json({
@@ -53,6 +55,14 @@ module.exports.createPost = async (req, res, next) => {
 
     user.posts.push(post);
     await user.save();
+
+    io.getIO().emit('posts-channel', {
+      action: 'created',
+      post: {
+        ...post._doc,
+        creator: user
+      }
+    })
 
     return res.status(201).json({
       post: post,
@@ -113,14 +123,14 @@ exports.updatePost = async (req, res, next) => {
       throw error;
     }
 
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId).populate('creator');
     if (!post) {
       const error = new Error('Could not find post.');
       error.statusCode = 404;
       throw error;
     }
 
-    if (post.creator.toString() !== req.userId.toString()) {
+    if (post.creator._id.toString() !== req.userId.toString()) {
       const error = new Error('Not authorized');
       error.statusCode = 403;
       throw error;
@@ -134,6 +144,11 @@ exports.updatePost = async (req, res, next) => {
     post.imageUrl = imageUrl;
     post.content = content;
     await post.save();
+
+    io.getIO().emit('posts-channel', {
+      action: 'updated',
+      post: post
+    });
 
     res.status(200).json({ message: 'Post updated!', post: post });
   }
@@ -169,6 +184,10 @@ exports.deletePost = async (req, res, next) => {
     user.posts.pull(postId);
     await user.save();
 
+    io.getIO().emit('posts-channel', {
+      action: 'deleted',
+      postId: postId
+    });
     res.status(200).json({ message: 'Deleted post.' });
   }
   catch (err) {

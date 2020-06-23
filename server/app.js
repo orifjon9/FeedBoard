@@ -70,8 +70,12 @@ app.use((error, req, res, next) => {
 mongoose
     .connect(process.env.MONGODB_URL)
     .then(() => {
-        console.log('Connected');
-        app.listen(process.env.PORT);
+        console.log('Server is running...');
+        const server = app.listen(process.env.PORT);
+        const io = require('./socket').init(server);
+        io.on('connection', socker => {
+            console.log('Client connected!');
+        });
     })
     .catch(err => console.log(err));
 
