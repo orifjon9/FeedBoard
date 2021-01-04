@@ -66,11 +66,12 @@ app.use((error, req, res, next) => {
     });
 });
 
+console.log(` ${process.env.MONGODB_URL}`);
 
 mongoose
     .connect(process.env.MONGODB_URL)
     .then(() => {
-        console.log('MONGODB connected!');
+        console.log(`Connected to MondoDB!`);
         console.log(`Server is running on port: ${process.env.PORT}...`);
         const server = app.listen(process.env.PORT);
         const io = require('./socket').init(server);

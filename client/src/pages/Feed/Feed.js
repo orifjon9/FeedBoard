@@ -9,6 +9,7 @@ import Paginator from '../../components/Paginator/Paginator';
 import Loader from '../../components/Loader/Loader';
 import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import './Feed.css';
+import API_URL from '../../constants/common';
 
 class Feed extends Component {
   state = {
@@ -23,7 +24,7 @@ class Feed extends Component {
   };
 
   componentDidMount() {
-    fetch(`http://${process.env.API_URL}/auth/status`, {
+    fetch(`${API_URL}/auth/status`, {
       headers: {
         'Authorization': 'Bearer ' + this.props.token
       }
@@ -40,7 +41,7 @@ class Feed extends Component {
       .catch(this.catchError);
 
     this.loadPosts();
-    const socket = openSocket(`http://${process.env.API_URL}`);
+    const socket = openSocket(`${API_URL}`);
     socket.on('posts-channel', data => {
       if (data.action === 'created') {
         this.addPost(data.post);
@@ -102,7 +103,7 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    fetch(`http://${process.env.API_URL}/feed/posts?page=${page}`, {
+    fetch(`${API_URL}/feed/posts?page=${page}`, {
       headers: {
         'Authorization': 'Bearer ' + this.props.token
       }
@@ -130,7 +131,7 @@ class Feed extends Component {
 
   statusUpdateHandler = event => {
     event.preventDefault();
-    fetch(`http://${process.env.API_URL}/auth/status`, {
+    fetch(`${API_URL}/auth/status`, {
       method: 'PATCH',
       headers: {
         'Authorization': 'Bearer ' + this.props.token,
@@ -176,7 +177,7 @@ class Feed extends Component {
       editLoading: true
     });
     // Set up data (with image!)
-    let url = `http://${process.env.API_URL}/feed/posts`;
+    let url = `${API_URL}/feed/posts`;
     let method = 'POST';
     if (this.state.editPost) {
       url = url + '/' + this.state.editPost._id;
@@ -236,7 +237,7 @@ class Feed extends Component {
 
   deletePostHandler = postId => {
     this.setState({ postsLoading: true });
-    fetch(`http://${process.env.API_URL}/feed/posts/${postId}`, {
+    fetch(`${API_URL}/feed/posts/${postId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': 'Bearer ' + this.props.token

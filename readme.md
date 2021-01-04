@@ -7,7 +7,7 @@ We will be run all applications on docker.
 `docker network create feedboard-net`
 
 ### Install and run mongodb instance as a container
-To Make sure, we don't lose data if a container restarts or re-creates
+To Make sure, we don't lose data if a container restarts or re-creates. So, volume is important.
 
 `docker run -d -p 27017:27017 --name feedboard-mongodb -v data:/data/db --network feedboard-net --rm mongo`
 
@@ -30,5 +30,18 @@ To Make sure, we don't lose data if a container restarts or re-creates
 
 #### Run the app
 Since React app runs on a browser. So, it doesn't matter if that container in the same network. Also the rest api domain shouldn't point to a container name. We can leave as localhost.If needs then just apply changes in .env file
+-it(interactive mode) is important otherwise React app stops
 
 `docker run --name feedback-client-app -d -p 3000:3000 -it --rm feedboard-client:1`
+
+
+## Docker Compose
+### Run applications through docker-compose: Elegant Multi-Container Orchestration
+To create and run services. Docker compose creates a default network for these service. So, doesn't need by default
+--build - it creates an image again otherwise it uses an existing
+
+`docker-compose up -d --build`
+
+To stop and remove created services. By default it doesnt remove volume. -v helps to remove
+`docker-compose down -v`
+

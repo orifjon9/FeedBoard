@@ -12,6 +12,7 @@ import SinglePostPage from './pages/Feed/SinglePost/SinglePost';
 import LoginPage from './pages/Auth/Login';
 import SignupPage from './pages/Auth/Signup';
 import './App.css';
+import API_URL from './constants/common';
 
 class App extends Component {
   state = {
@@ -59,7 +60,7 @@ class App extends Component {
   loginHandler = (event, authData) => {
     event.preventDefault();
     this.setState({ authLoading: true });
-    fetch(`http://${process.env.API_URL}/auth/login`, {
+    fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -109,7 +110,7 @@ class App extends Component {
   signupHandler = (event, authData) => {
     event.preventDefault();
     this.setState({ authLoading: true });
-    fetch(`http://${process.env.API_URL}/auth/signup`, {
+    fetch(`${API_URL}/auth/signup`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'

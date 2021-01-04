@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: 'mongo'
+    container_name: 'feedboard-mongodb'
+    volumes:
+      - mongodb-data:/data/db
+    # environment:
+      # - MONGO_INITDB_ROOT_USERNAME=orifjon9
+      # - MONGO_INITDB_ROOT_PASSWORD=secret
+      # - MONGO_INITDB_DATABASE=auth
+      - auth=no
+    ports:
+      - 27017:27017
+    # env_file:
+    #   - ./env/mongo.env
+  backend:
+    build: ./server
+    container_name: feedback-server-app
+    # build: 
+    #   context: ./server
+    #   dockerfile: Dockerfile
+    #   args:
+    #     some-arg:1
+    ports:
+      - '4000:4000'
+    volumes: 
+      - server-logs:/app/logs
+    env_file:
+      - ./env/server.env
+    depends_on:
+      - mongodb
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - ARG_PORT=3000
+        - ARG_API_URL=localhost:4000
+    container_name: feedboard-client-app
+    environment:
+      - PORT=3000
+      - API_URL=localhost:4000
+    ports:
+      - '3000:3000'
+    ### -it turn on
+    stdin_open: true
+    tty: true
+    ###
+    depends_on:
+      - backend
+
+
+volumes:
+  mongodb-data:
+  server-logs:
