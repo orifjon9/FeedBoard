@@ -24,7 +24,7 @@ services:
     #   args:
     #     some-arg:1
     ports:
-      - '4000:4000'
+      - '4000:80'
     volumes: 
       - server-logs:/app/logs
     env_file:
